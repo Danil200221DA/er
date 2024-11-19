@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YAMITEAM</title>
+  <style>
+    /* Убедитесь, что canvas находится позади всего */
+    body {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Roboto Mono', Arial, sans-serif;
+      background: #000; /* Черный фон */
+    }
+
+    /* Стиль для меню с добавлением свечения */
+    .menu-container {
+      width: 300px;
+      padding: 20px;
+      background-color: rgba(45, 52, 64, 0.8);
+      border-radius: 10px;
+      text-align: center;
+      color: white;
+      z-index: 2; /* Меню должно быть выше, чем canvas */
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.5); /* Белое свечение вокруг контейнера */
+      transition: box-shadow 0.3s ease-in-out; /* Плавное изменение свечения */
+    }
+
+    /* Добавим анимацию свечения */
+    .menu-container:hover {
+      box-shadow: 0 0 50px rgba(255, 255, 255, 0.8); /* Увеличиваем свечение при наведении */
+    }
+
+    .menu-title {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .menu-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .menu-item {
+      background-color: rgba(61, 67, 80, 0.8);
+      padding: 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: white;
+      overflow: hidden;
+    }
+
+    .menu-item:hover {
+      background-color: rgba(77, 86, 96, 0.8);
+      transform: scale(1.05);
+    }
+
+    .menu-item img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+    }
+
+    .menu-item p {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-weight: bold;
+      font-size: 20px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
+
+    .menu-button {
+      background-color: rgba(61, 75, 97, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+
+    .menu-button:hover {
+      background-color: #28a745;
+      transform: scale(1.05);
+    }
+
+    /* Canvas для анимации частиц */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1; /* canvas позади контента */
+    }
+
+    /* Стиль для кнопок выбора языка */
+    .language-selection {
+      display: flex;
+      gap: 15px;
+      justify-content: center; /* Центрируем кнопки по горизонтали */
+      position: absolute;
+      top: 77%; /* Размещаем кнопки сразу под меню */
+      left: 50%;
+      transform: translateX(-50%); /* Центрируем кнопки по горизонтали */
+      margin-top: 10px; /* Уменьшаем отступ между меню и кнопками */
+    }
+
+    .language-selection .flag-container {
+      width: 40px; /* Уменьшаем размер кнопок */
+      height: 40px; /* Уменьшаем размер кнопок */
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .language-selection .flag-container:hover {
+      transform: scale(1.2); /* Увеличиваем кнопку при наведении */
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+    }
+
+    .language-selection .flag-ru {
+      background-image: url('image/rus.png');
+    }
+
+    .language-selection .flag-uz {
+      background-image: url('image/eng.png');
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Анимация фона -->
+  <canvas id="background"></canvas>
+
+  <div class="menu-container">
+    <div class="menu-grid">
+      <div class="menu-item" onclick="openGame('Mines')">
+        <img src="image/mines.png.jpg" alt="Mines.image">
+        <p>Mines</p>
+      </div>
+      <div class="menu-item" onclick="openGame('LuckyJet')">
+        <img src="image/lucky.png.jpg" alt="LuckyJet.image">
+        <p>LuckyJet</p>
+      </div>
+      <div class="menu-item" onclick="openGame('CoinFlip')">
+        <img src="image/coins.jpg" alt="CoinFlip.image">
+        <p>CoinFlip</p>
+      </div>
+    </div>
+    <button class="menu-button" onclick="showInstructions()">Инструкция</button>
+    <button class="menu-button" onclick="playGame()">Играем тут</button>
+  </div>
+
+  <!-- Выбор языка -->
+  <div class="language-selection">
+    <div class="flag-container flag-ru" onclick="changeLanguage('ru')"></div>
+    <div class="flag-container flag-uz" onclick="changeLanguage('uz')"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('background');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 2 - 1;
+        this.speedY = Math.random() * 2 - 1;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+        if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = 'white'; /* Белые частицы */
+        ctx.fill();
+      }
+    }
+
+    function init() {
+      for (let i = 0; i < 100; i++) {
+        particles.push(new Particle(
+          Math.random() * canvas.width,
+          Math.random() * canvas.height
+        ));
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((particle) => {
+        particle.update();
+        particle.draw();
+      });
+      requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      particles.length = 0;
+      init();
+    });
+
+    function openGame(gameName) {
+      if (gameName === 'Mines') {
+        window.location.href = 'MENUMIN.html';
+      } else if (gameName === 'LuckyJet') {
+        window.location.href = 'LJ.html';
+      } else if (gameName === 'CoinFlip') {
+        window.location.href = 'coin.html';
+      } else {
+        alert("Opening " + gameName + "...");
+      }
+    }
+
+    function showInstructions() {
+      window.location.href = 'instruction.html';
+    }
+
+    function playGame() {
+      window.location.href = 'https://1wzvro.top/?p=rh7l';
+    }
+
+    function changeLanguage(language) {
+      window.location.href = 'index.html?lang=' + language;
+    }
+  </script>
+
+</body>
+</html>
